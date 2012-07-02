@@ -2,7 +2,6 @@
 /**
  * Module dependencies.
  */
-
 var express = require('express'),
 	routes = require('./routes'),
 	mongoose = require('mongoose'),
@@ -62,7 +61,7 @@ app.get('/login', function(req, res) {
 });
 
 app.get('/', loadUser, function(req, res) {
-	res.send('Dosta³eœ siê :)');
+	res.send('dotaÅ‚eÅ› siÄ™ :)');
 });
 
 app.listen(3000, function(){
