@@ -1,9 +1,14 @@
 {
-    "name": "application-name"
+    "name": "iris_recognition"
   , "version": "0.0.1"
   , "private": true
   , "dependencies": {
       "express": "2.5.8"
-    , "jade": ">= 0.0.1"
+    , "connect": "2.3.6"
+    , "connect-mongodb": "1.1.4"
+    , "connect-timeout": "0.0.1"
+    , "jade": "0.26.1"
+    , "mongoose": "2.7.0"
+    , "stylus": "0.28.1"
   }
 }

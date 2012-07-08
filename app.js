@@ -2,14 +2,14 @@
 /**
  * Module dependencies.
  */
-var express = require('express'),
-    connect = require('connect'),
-    jade = require('jade'),
+var express = require('express@2.5.8'),
+    connect = require('connect@2.3.6'),
+    jade = require('jade@0.26.1'),
     app = module.exports = express.createServer(),
-    mongoose = require('mongoose'),
-    mongoStore = require('connect-mongodb'),
-    stylus = require('stylus'),
-    connectTimeout = require('connect-timeout'),
+    mongoose = require('mongoose@2.7.0'),
+    mongoStore = require('connect-mongodb@1.1.4'),
+    stylus = require('stylus@0.28.1'),
+    connectTimeout = require('connect-timeout@0.0.1'),
 //    util = require('util'),
 //    path = require('path'),
     models = require('./models'),
