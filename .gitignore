@@ -9,6 +9,8 @@ dist/
 nbdist/
 nbactions.xml
 nb-configuration.xml
+project.xml
+project.properties
 
 #################
 ## Eclipse
