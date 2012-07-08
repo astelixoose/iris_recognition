@@ -68,16 +68,16 @@ function loadUser(req, res, next) {
 //	}
 }
 
-app.get('/', loadUser, function(req, res) {
-	res.send('dotałeś się :)');
-//	console.log('dostales sie');
-});
-
-
-
-//app.get('/', function(req, res) {
+//app.get('/', loadUser, function(req, res) {
 //	res.send('dotałeś się :)');
+////	console.log('dostales sie');
 //});
+
+
+
+app.get('/', function(req, res) {
+	res.send('dotałeś się :)');
+});
 
 
 
