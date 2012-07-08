@@ -10,5 +10,6 @@
     , "jade": "0.26.1"
     , "mongoose": "2.7.0"
     , "stylus": "0.28.1"
+    , "session-mongoose": "0.0.2"
   }
 }

@@ -2,14 +2,15 @@
 /**
  * Module dependencies.
  */
-var express = require('express@2.5.8'),
-    connect = require('connect@2.3.6'),
-    jade = require('jade@0.26.1'),
+var express = require('express'),
+    connect = require('connect'),
+    jade = require('jade'),
     app = module.exports = express.createServer(),
-    mongoose = require('mongoose@2.7.0'),
-    mongoStore = require('connect-mongodb@1.1.4'),
-    stylus = require('stylus@0.28.1'),
-    connectTimeout = require('connect-timeout@0.0.1'),
+    mongoose = require('mongoose'),
+//    mongoStore = require('connect-mongodb@1.1.4'),
+    mongoStore = require('session-mongoose'),
+    stylus = require('stylus'),
+    connectTimeout = require('connect-timeout'),
 //    util = require('util'),
 //    path = require('path'),
     models = require('./models'),
@@ -43,7 +44,16 @@ app.configure(function(){
 	app.use(express.bodyParser());
 	app.use(express.cookieParser());
 //	app.use(connectTimeout({ time: 10000 }));
-	app.use(express.session({store: new mongoStore({db : db}), secret: 'topsecret'}));
+
+
+	app.use(express.session( {
+			cookie: {maxAge: 1200000}, 
+			store:  new mongoStore({url: app.set('db-uri'), interval: 1200000}), 
+			secret: "idefix" 
+		}));
+
+
+//	app.use(express.session({store: new mongoStore({db : db}), secret: 'topsecret'}));
 //	app.use(express.logger({ format: '\x1b[1m:method\x1b[0m \x1b[33m:url\x1b[0m :response-time ms' }))
 	app.use(express.methodOverride());
 //	app.use(stylus.middleware({ src: __dirname + '/public' }));
