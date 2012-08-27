@@ -1,6 +1,22 @@
 !!!
 html
-  head
-    title= title
-    link(rel='stylesheet', href='/stylesheets/style.css')
-  body!= body
+	head
+		title Systemu IRIS
+		link(rel='stylesheet', href='/stylesheets/style.css')
+	body
+		.header
+			.logo 
+				h1 System IRIS
+			.infoUser Zalogowany: #{currentUser.login}
+				a(href='logout') Wyloguj
+		.container
+			.lnav
+				ul
+					li
+						a(href='identify') Ustal tożsamość
+					li
+						a(href='criminals') Baza przestępców
+			.content!= body
+		.footer 
+			p @copyright Rafał Sarzyński 
+			p Dyplomowy projekt inżynierski

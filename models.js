@@ -13,9 +13,9 @@ function defineModels(mongoose, fn) {
 	}
   
 	User = new Schema({
-		'email': {
+		'login': {
 			type: String, 
-			validate: [validatePresenceOf, 'an email is required'], 
+			validate: [validatePresenceOf, 'an login is required'], 
 			index: {
 				unique: true
 			}

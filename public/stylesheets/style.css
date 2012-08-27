@@ -1,8 +1,76 @@
-body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+* {
+	margin: 0;
+	padding: 0;
 }
-
+body {
+  padding: 0;
+  margin: 0;
+  font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+  line-height: 1.2;
+  color: #464646;
+}
+p {
+	margin: 10px 0;
+	padding: 5px;
+}
 a {
   color: #00B7FF;
+}
+.header {
+	padding: 10px;
+	background-color: #39B9DC;
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#39B9DC', endColorstr='#2E99B7'); /* for IE */
+	background: -webkit-gradient(linear, left top, left bottom, from(#39B9DC), to(#2E99B7)); /* for webkit browsers */
+	background: -moz-linear-gradient(top,  #39B9DC,  #2E99B7); /* for firefox 3.6+ */ 
+	position: relative;
+	color: #fff;
+	text-shadow: 1px 1px 1px #777777;
+}
+.logo {
+	text-align: center;
+}
+.infoUser {
+	position: absolute;
+	right: 0px;
+	bottom: 0;
+	padding: 10px;
+}
+.infoUser a {
+	color: #fff;
+	padding-left: 10px;
+}
+.container {
+	
+}
+.lnav {
+    background-color: #005E7D;
+    border-right: 4px solid #2E99B7;
+    float: left;
+    min-height: 300px;
+    width: 200px;
+    border-bottom: 2px solid #2E99B7;
+}
+.lnav a {
+	display: block;
+    background-color: #2FA4CB;
+    margin: 2px;
+    padding: 5px;
+	color: #fff;
+	text-align: center;
+}
+.lnav a:hover {
+    background-color: #36B5DE;
+}
+.content {
+	overflow: auto;
+	padding: 10px 10px 10px 20px;
+}
+.footer {
+	text-align: center;
+	clear: both;
+	color: #ccc;
+}
+.si_title {
+	margin-top: 30px;
+	padding-left: 30px;
 }

@@ -1,0 +1,5 @@
+form.loginForm(method='post', action='')
+	h1 Logowanie - IRIS
+	!=partial('form', { locals: { user: user } })
+	.submit
+		input(type='submit', value='Zaloguj')
