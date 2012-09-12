@@ -1,0 +1,41 @@
+div.criminalDetails
+	.image
+		img(src=dir_public_images + '/no_pictures.jpg', alt='Zdjecie osoby')
+	table.details
+		tr
+			td Imię
+			td #{criminal.firstname}
+		tr
+			td Nazwisko
+			td #{criminal.lastname}
+		tr
+			td Data urodzenia
+			td #{criminal.date_of_birth}
+		tr
+			td Wzrost
+			td #{criminal.height}
+		tr
+			td Kolor oczu
+			td #{criminal.eye_color}
+		tr
+			td Wzrost
+			td #{criminal.height}
+		tr
+			td Ostatni adres zameldowania
+			td #{criminal.last_address}
+		tr
+			td Cechy rysopisowe
+			td #{criminal.characteristics}
+		tr
+			td Imiona rodziców
+			td #{criminal.parents_name}
+		tr
+			td Wysokość kary
+			td #{criminal.prison_sentence}
+		tr
+			td Treść kary
+			td #{criminal.content_penalty}
+		tr
+			td Inne informacje
+			td #{criminal.others}
+	.clear

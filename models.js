@@ -1,21 +1,21 @@
 var crypto = require('crypto'),
-User;
+User, Criminal;
 
 function defineModels(mongoose, fn) {
 	var Schema = mongoose.Schema,
 	ObjectId = Schema.ObjectId;
 
-	/**
-    * Model: User
-    */
 	function validatePresenceOf(value) {
 		return value && value.length;
 	}
   
+	/**
+    * Model: User
+    */
 	User = new Schema({
 		'login': {
 			type: String, 
-			validate: [validatePresenceOf, 'an login is required'], 
+			validate: [validatePresenceOf, 'To pole jest wymagane'], 
 			index: {
 				unique: true
 			}
@@ -60,6 +60,27 @@ function defineModels(mongoose, fn) {
 	});
 
 	mongoose.model('User', User, 'user');
+  
+	/**
+    * Model: Criminal
+    */
+	Criminal = new Schema({
+		'firstname': {
+			type: String, 
+			validate: [validatePresenceOf, 'To pole jest wymagane']
+		},
+		'lastname': {
+			type: String, 
+			validate: [validatePresenceOf, 'To pole jest wymagane']
+		}
+	});
+
+	Criminal.virtual('id')
+	.get(function() {
+		return this._id.toHexString();
+	});
+
+	mongoose.model('Criminal', Criminal, 'criminal');
 
 	fn();
 }

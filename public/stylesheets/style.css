@@ -7,7 +7,8 @@ body {
   margin: 0;
   font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
   line-height: 1.2;
-  color: #464646;
+  color: #DDDDDD;
+  background-color: #172B43;
 }
 p {
 	margin: 10px 0;
@@ -15,6 +16,20 @@ p {
 }
 a {
   color: #00B7FF;
+}
+input, textarea {
+	border: 1px solid #bebebe;
+	padding: 4px 8px;
+	margin: 4px;
+}
+input[type=text], textarea {
+	color: #DDDDDD;
+	background-color: #122133;
+	width: 300px;
+	border-radius: 5px;
+}
+input[type=submit] {
+	cursor: pointer;
 }
 .header {
 	padding: 10px;
@@ -63,7 +78,10 @@ a {
 }
 .content {
 	overflow: auto;
-	padding: 10px 10px 10px 20px;
+	padding: 20px 30px;
+}
+.clear {
+	clear: both;
 }
 .footer {
 	text-align: center;
@@ -73,4 +91,47 @@ a {
 .si_title {
 	margin-top: 30px;
 	padding-left: 30px;
+}
+.irisPreview {
+	width: 100px;
+}
+.content td, .content th {
+	border-top: 1px solid #bebebe;
+	padding: 5px 10px;
+}
+.content th {
+	background-color: #E6E6E6;
+	color: #172B43;
+}
+.content form td, .content form th {
+	border: none;
+	padding: 0;
+}
+.content form th {
+	background-color: transparent;
+}
+.content form tr > td:first-child {
+	text-align: right;
+	padding-right: 5px;
+}
+.details {
+	width: 70%;
+}
+.details td {
+	border: none;
+}
+.details tr > td:first-child {
+	text-align: right;
+	font-weight: bold;
+	width: 150px;
+}
+.criminalDetails {
+	
+}
+.criminalDetails .details {
+	float: left;
+}
+.criminalDetails .image {
+	float: left;
+	margin: 0 30px 10px 10px;
 }

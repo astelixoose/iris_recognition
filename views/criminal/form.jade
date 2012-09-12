@@ -1,0 +1,65 @@
+tr
+	td 
+		label(for='firstname') Imię
+	td 
+		input(type='text', name='criminal[firstname]', value= criminal.firstname || '')
+tr
+	td 
+		label(for='lastname') Nazwisko
+	td 
+		input(type='text', name='criminal[lastname]', value= criminal.lastname || '')
+tr
+	td 
+		label(for='img_general') Zdjęcie osoby
+	td 
+		input(type='file', name='cfiles[img_general]')
+tr
+	td 
+		label(for='img_iris') Zdjęcie tęczówki oka
+	td 
+		input(type='file', name='cfiles[img_iris]')
+tr
+	td 
+		label(for='date_of_birth') Data urodzenia
+	td 
+		input(type='text', name='criminal[date_of_birth]', value= criminal.date_of_birth || '')
+tr
+	td 
+		label(for='height') Wzrost
+	td 
+		input(type='text', name='criminal[height]', value= criminal.height || '')
+tr
+	td 
+		label(for='eye_color') Kolor oczu
+	td 
+		input(type='text', name='criminal[eye_color]', value= criminal.eye_color || '')
+tr
+	td 
+		label(for='last_address') Ostatni adres zameldowania
+	td 
+		input(type='text', name='criminal[last_address]', value= criminal.last_address || '')
+tr
+	td 
+		label(for='characteristics') Cechy rysopisowe
+	td 
+		textarea(name='criminal[characteristics]', value= criminal.characteristics || '')
+tr
+	td 
+		label(for='parents_name') Imiona rodziców
+	td 
+		input(type='text', name='criminal[parents_name]', value= criminal.parents_name || '')
+tr
+	td 
+		label(for='prison_sentence') Wysokość kary
+	td 
+		input(type='text', name='criminal[prison_sentence]', value= criminal.prison_sentence || '')
+tr
+	td 
+		label(for='content_penalty') Treść kary
+	td 
+		textarea(name='criminal[content_penalty]', value= criminal.content_penalty || '')
+tr
+	td 
+		label(for='others') Inne informacje
+	td 
+		textarea(name='criminal[others]', value= criminal.others || '')

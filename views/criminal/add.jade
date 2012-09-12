@@ -1,0 +1,8 @@
+p Dodaj nowego
+form.criminalsForm(method='post', action='')
+	table
+		!=partial('criminal/form', { locals: { criminal: criminal } })
+		tr.submit
+			td
+			td 
+				input(type='submit', value='Dodaj')

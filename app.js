@@ -15,11 +15,18 @@ var express = require('express'),
     path = require('path'),
     models = require('./models'),
 	fileUpload = require('fileupload'),
+//	fileuploadGridfs = require('fileupload-gridfs'),
     db,
-    User;
+    User,
+    Criminal;
 
 app.configure('development', function(){
 	app.set('db-uri', 'mongodb://localhost/test');
+	app.locals({
+		title: 'System iris',
+		dir_host: 'http://localhost:3000',
+		dir_public_images: 'http://localhost:3000/images'
+	});
 	app.use(express.errorHandler({
 		dumpExceptions: true, 
 		showStack: true
@@ -28,12 +35,18 @@ app.configure('development', function(){
 
 app.configure('production', function(){
 	app.set('db-uri', 'mongodb://localhost/test');
+	app.locals({
+		title: 'System iris',
+		dir_host: 'http://localhost:3000',
+		dir_public_images: __dirname + '/public/images'
+	});
 	app.use(express.errorHandler());
 });
 
 // Models
 models.defineModels(mongoose, function() {
 	app.User = User = mongoose.model('User');
+	app.Criminal = Criminal = mongoose.model('Criminal');
 	db = mongoose.connect(app.set('db-uri'));
 });
 
@@ -43,6 +56,7 @@ app.configure(function(){
 	app.set('view engine', 'jade');
 //	app.use(express.favicon());
 	app.use(express.bodyParser());
+//	app.use(express.bodyParser({ keepExtensions: true, uploadDir: '/my/files' }));
 	app.use(express.cookieParser());
 	app.use(connectTimeout({ time: 10000 }));
 
@@ -56,10 +70,18 @@ app.configure(function(){
 
 //	app.use(express.session({store: new mongoStore({db : db}), secret: 'topsecret'}));
 //	app.use(express.logger({ format: '\x1b[1m:method\x1b[0m \x1b[33m:url\x1b[0m :response-time ms' }))
+
+
+
 	app.use(express.methodOverride());
 	app.use(stylus.middleware({ src: __dirname + '/public' }));
 	app.use(app.router);
 	app.use(express.static(__dirname + '/public'));
+	
+	var fileuploadMiddleware = fileUpload.createFileUpload(__dirname +'/public/tmp').middleware;
+//	var fileuploadMiddleware = fileUpload.createFileUpload({
+//		adapter: fileuploadGridfs({ database: 'test' })
+//	}).middleware;
 });
 
 
@@ -70,6 +92,7 @@ function loadUser(req, res, next) {
 			if (user) {
 				req.currentUser = user;
 				res.local('currentUser', user);
+				res.local('public_images', req.ip);
 				next();
 			} else {
 				res.redirect('/login');
@@ -96,21 +119,84 @@ app.get('/identify', loadUser, function(req, res) {
 	});
 });
 
-var fileuploadMiddleware = fileUpload.createFileUpload('/uploadDir').middleware;
 app.post('/identify', loadUser, fileuploadMiddleware, function(req, res) {
-	res.send(req.file);
-//	res.render('identify/index.jade', {
+	console.log(util.inspect(req.files, false, null));
+	console.log(util.inspect(req.body, false, null));
+	if (req.body.image && req.body.image[0]) {
+		var image = req.body.image[0];
+		image.publicPath = '/tmp/' + image.path + image.basename;
+		res.render('identify/details.jade', {
+			locals: {
+				user: req.currentUser,
+				image: image
+			}
+		});
+	}
+	else {
+		res.render('identify/index.jade', {
+			locals: {
+				user: req.currentUser
+			}
+		});
+	}
+});
+
+app.get('/criminals', loadUser, function(req, res) {
+	Criminal.find({}, function(err, criminals) {
+		res.render('criminal/index.jade', {
+			locals: {
+				user: req.currentUser,
+				criminals: criminals
+			}
+		});
+	});
+//	res.render('criminal/index.jade', {
 //		locals: {
 //			user: req.currentUser
 //		}
 //	});
 });
 
-app.get('/criminals', loadUser, function(req, res) {
-	res.render('criminal/index.jade', {
+app.get('/criminals/add', loadUser, function(req, res) {
+	res.render('criminal/add.jade', {
 		locals: {
-			user: req.currentUser
+			user: req.currentUser,
+			criminal: new Criminal()
 		}
+	});
+});
+
+app.post('/criminals/add', loadUser, function(req, res) {
+	var criminal = new Criminal(req.body.criminal);
+	
+	console.log(util.inspect(criminal, false, null));
+	
+	criminal.save(function(err) {
+		if (err) {
+			console.log(util.inspect(err, false, null));
+			res.send('nie powiodlo sie ;(');
+		}
+		else {
+			res.send(criminal);
+		}
+	});
+	
+//	res.render('criminal/add.jade', {
+//		locals: {
+//			user: req.currentUser,
+//			criminal: new Criminal()
+//		}
+//	});
+});
+
+app.get('/criminals/details/:id', loadUser, function(req, res) {
+	Criminal.findOne({_id: req.params.id}, function(err, criminal) {
+		res.render('criminal/details.jade', {
+			locals: {
+				user: req.currentUser,
+				criminal: criminal
+			}
+		});
 	});
 });
 
@@ -171,6 +257,7 @@ app.post('/login', function(req, res) {
 		} else {
 //			req.flash('error', 'Incorrect credentials');
 			res.render('user/login.jade', {
+				layout: 'simple',
 				locals: {
 					title: 'Logowanie do systemu IRIS',
 					user: user || new User()

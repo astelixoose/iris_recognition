@@ -1,0 +1,15 @@
+a(href='criminals/add') Dodaj nowego
+br
+br
+if criminals
+	table
+		tr
+			th Imię i nazwisko
+			th Opcje
+		each criminal in criminals
+			tr
+				td #{criminal.firstname} #{criminal.lastname}
+				td 
+					a(href='criminals/details/#{criminal.id}') Pokaż
+else
+	p W bazie nie ma przestępców
