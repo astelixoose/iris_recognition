@@ -1,15 +1,15 @@
 {
     "name": "iris_recognition"
-  , "version": "0.0.1"
+  , "version": "0.0.2"
   , "private": true
   , "dependencies": {
       "express": "2.5.8"
-    , "connect": "2.3.6"
-    , "connect-mongodb": "1.1.4"
     , "connect-timeout": "0.0.1"
     , "jade": "0.26.1"
-    , "mongoose": "2.7.0"
+    , "mongoose": "3.1.2"
     , "stylus": "0.28.1"
     , "session-mongoose": "0.0.2"
+    , "GridFS": "0.2.0"
+    , "fileupload": "0.2.2"
   }
 }

@@ -1,0 +1,8 @@
+p Edycja danych
+form.criminalsForm(method='post', action='', enctype='multipart/form-data')
+	table
+		!=partial('criminal/form', { locals: { criminal: criminal } })
+		tr.submit
+			td
+			td 
+				input(type='submit', value='Zapisz')

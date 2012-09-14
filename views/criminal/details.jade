@@ -1,6 +1,9 @@
 div.criminalDetails
 	.image
-		img(src=dir_public_images + '/no_pictures.jpg', alt='Zdjecie osoby')
+		img(src=dir_host +'/static/criminal/'+ criminal._id, alt='Zdjecie osoby')
+		br
+		br
+		a(href=dir_host + '/criminals/edit/'+ criminal._id) Zmień dane
 	table.details
 		tr
 			td Imię
@@ -17,9 +20,6 @@ div.criminalDetails
 		tr
 			td Kolor oczu
 			td #{criminal.eye_color}
-		tr
-			td Wzrost
-			td #{criminal.height}
 		tr
 			td Ostatni adres zameldowania
 			td #{criminal.last_address}

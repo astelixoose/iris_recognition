@@ -3,20 +3,24 @@
  * Module dependencies.
  */
 var express = require('express'),
-    connect = require('connect'),
     jade = require('jade'),
     app = module.exports = express.createServer(),
     mongoose = require('mongoose'),
-//    mongoStore = require('connect-mongodb@1.1.4'),
+    Schema = mongoose.Schema,
     mongoStore = require('session-mongoose'),
+    GridFS = require('GridFS').GridFS,
+	ObjectID = mongoose.Types.ObjectId,
+	GridStore = mongoose.mongo.GridStore,
     stylus = require('stylus'),
     connectTimeout = require('connect-timeout'),
     util = require('util'),
     path = require('path'),
     models = require('./models'),
 	fileUpload = require('fileupload'),
-//	fileuploadGridfs = require('fileupload-gridfs'),
+	fs = require('fs'),
+	fileuploadMiddleware,
     db,
+	fileRepo,
     User,
     Criminal;
 
@@ -48,6 +52,8 @@ models.defineModels(mongoose, function() {
 	app.User = User = mongoose.model('User');
 	app.Criminal = Criminal = mongoose.model('Criminal');
 	db = mongoose.connect(app.set('db-uri'));
+	
+	fileRepo = new GridFS('test');
 });
 
 // Configuration
@@ -55,8 +61,8 @@ app.configure(function(){
 	app.set('views', __dirname + '/views');
 	app.set('view engine', 'jade');
 //	app.use(express.favicon());
-	app.use(express.bodyParser());
-//	app.use(express.bodyParser({ keepExtensions: true, uploadDir: '/my/files' }));
+//	app.use(express.bodyParser());
+	app.use(express.bodyParser({ keepExtensions: true, uploadDir: __dirname +'/tmp' }));
 	app.use(express.cookieParser());
 	app.use(connectTimeout({ time: 10000 }));
 
@@ -78,7 +84,8 @@ app.configure(function(){
 	app.use(app.router);
 	app.use(express.static(__dirname + '/public'));
 	
-	var fileuploadMiddleware = fileUpload.createFileUpload(__dirname +'/public/tmp').middleware;
+	fileuploadPublicMiddleware = fileUpload.createFileUpload(__dirname +'/public/tmp').middleware;
+	fileuploadBackendMiddleware = fileUpload.createFileUpload(__dirname +'/tmp').middleware;
 //	var fileuploadMiddleware = fileUpload.createFileUpload({
 //		adapter: fileuploadGridfs({ database: 'test' })
 //	}).middleware;
@@ -119,7 +126,8 @@ app.get('/identify', loadUser, function(req, res) {
 	});
 });
 
-app.post('/identify', loadUser, fileuploadMiddleware, function(req, res) {
+app.post('/identify', loadUser, fileuploadPublicMiddleware, function(req, res) {
+//app.post('/identify', loadUser, function(req, res) {
 	console.log(util.inspect(req.files, false, null));
 	console.log(util.inspect(req.body, false, null));
 	if (req.body.image && req.body.image[0]) {
@@ -150,11 +158,6 @@ app.get('/criminals', loadUser, function(req, res) {
 			}
 		});
 	});
-//	res.render('criminal/index.jade', {
-//		locals: {
-//			user: req.currentUser
-//		}
-//	});
 });
 
 app.get('/criminals/add', loadUser, function(req, res) {
@@ -169,34 +172,189 @@ app.get('/criminals/add', loadUser, function(req, res) {
 app.post('/criminals/add', loadUser, function(req, res) {
 	var criminal = new Criminal(req.body.criminal);
 	
-	console.log(util.inspect(criminal, false, null));
+	var errorFunction = function(err, criminal) {
+		if (err) console.log(util.inspect(err, false, null));
+		res.render('criminal/add.jade', {
+			locals: {
+				user: req.currentUser,
+				criminal: criminal || new Criminal()
+			}
+		});
+	}
+	var successFunction = function() {
+		res.redirect('/criminals');
+	}
+	
+	var uploadFile= function(img, ownerId, typeData, callback) {
+		fs.readFile(img.path, function(err, data){
+			if (err) {
+				callback(err);
+			}
+			else {
+				var imageBuffer = new Buffer(data, 'binary');
+				fileRepo.put(imageBuffer, undefined, 'w', { 'content_type' : img.type, 'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err){
+					callback();
+				});
+			}
+		});
+	}
 	
 	criminal.save(function(err) {
 		if (err) {
-			console.log(util.inspect(err, false, null));
-			res.send('nie powiodlo sie ;(');
+			errorFunction(err, criminal);
 		}
 		else {
-			res.send(criminal);
+			if (req.files) {
+				if (req.files.img_general && req.files.img_iris) {
+					uploadFile(req.files.img_general, criminal._id, 'general',function(err) {
+						uploadFile(req.files.img_iris, criminal._id, 'iris', function(err) {
+							successFunction();
+						});
+					});
+				}
+				else {
+					successFunction();
+				}
+			}
+			else {
+				successFunction();
+			}
 		}
 	});
+});
+
+app.get('/criminals/edit/:id', loadUser, function(req, res) {
+	Criminal.findOne({_id: req.params.id}, function(err, criminal) {
+		if (err) {
+			res.redirect('/criminals');
+		}
+		else {
+			res.render('criminal/edit.jade', {
+				locals: {
+					user: req.currentUser,
+					criminal: criminal
+				}
+			});
+		}
+	});
+});
+
+app.post('/criminals/edit/:id', loadUser, function(req, res) {
+	var criminal = new Criminal(req.body.criminal);
 	
-//	res.render('criminal/add.jade', {
-//		locals: {
-//			user: req.currentUser,
-//			criminal: new Criminal()
-//		}
-//	});
+	var errorFunction = function(err, criminal) {
+		if (err) console.log(util.inspect(err, false, null));
+		res.render('criminal/edit.jade', {
+			locals: {
+				user: req.currentUser,
+				criminal: criminal || new Criminal()
+			}
+		});
+	}
+	var successFunction = function() {
+		res.redirect('/criminals');
+	}
+	
+	var uploadFile= function(img, ownerId, typeData, callback) {
+		fs.readFile(img.path, function(err, data){
+			if (err) {
+				callback(err);
+			}
+			else {
+				var imageBuffer = new Buffer(data, 'binary');
+				fileRepo.put(imageBuffer, undefined, 'w', { 'content_type' : img.type, 'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err){
+					callback();
+				});
+			}
+		});
+	}
+	
+	Criminal.findByIdAndUpdate(req.params.id, req.body.criminal, function(err, criminal) {
+		if (err) {
+			errorFunction(err, criminal);
+		}
+		else {
+			if (req.files) {
+				if (req.files.img_general && req.files.img_iris) {
+//					uploadFile(req.files.img_general, criminal._id, 'general',function(err) {
+//						uploadFile(req.files.img_iris, criminal._id, 'iris', function(err) {
+							successFunction();
+//						});
+//					});
+				}
+				else {
+					successFunction();
+				}
+			}
+			else {
+				successFunction();
+			}
+		}
+	});
 });
 
 app.get('/criminals/details/:id', loadUser, function(req, res) {
 	Criminal.findOne({_id: req.params.id}, function(err, criminal) {
-		res.render('criminal/details.jade', {
-			locals: {
-				user: req.currentUser,
-				criminal: criminal
-			}
-		});
+		if (err) {
+			res.redirect('/criminals');
+		}
+		else {
+			res.render('criminal/details.jade', {
+				locals: {
+					user: req.currentUser,
+					criminal: criminal
+				}
+			});
+		}
+	});
+});
+
+/**
+ * Statyczne pliki kryminalisy
+ */
+app.get('/static/criminal/:id', loadUser, function(req, res) {
+	
+	var notFound = function(err) {
+		if (err) console.log(util.inspect(err, false, null));
+		res.header('Content-Type', 'image/jpeg');
+		fs.createReadStream(__dirname +'/public/images/no_pictures.jpg').pipe(res);
+	}
+	
+	Criminal.findOne({_id: req.params.id}, function(err, criminal) {
+		if (err) {
+			notFound(err);
+		}
+		else {
+			var Files = mongoose.model('files', new mongoose.Schema({}), 'fs.files');
+			Files.find({'metadata.owner_id' : criminal._id}, function(err, data) {
+				if (err) {
+					notFound(err);
+				}
+				else {
+					if (!data[0]) {
+						notFound();
+					}
+					else {
+						console.log(util.inspect(data[0]._id, false, null));
+						var gs = new GridStore(db.connection.db, data[0]._id, null,'r');
+						gs.open(function(err, store) {
+							if (err) {
+								notFound(err);
+							}
+							else {
+								console.log(util.inspect('otworzono store', false, null));
+								console.log(util.inspect(store.metadata, false, null));
+								console.log(util.inspect(store.contentType, false, null));
+								console.log(util.inspect(store.length - store.position, false, null));
+
+								res.header('Content-Type', store.contentType);
+								store.stream(true).pipe(res);
+							}
+						});
+					}
+				}
+			})
+		}
 	});
 });
 

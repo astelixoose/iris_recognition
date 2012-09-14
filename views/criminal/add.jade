@@ -1,5 +1,5 @@
 p Dodaj nowego
-form.criminalsForm(method='post', action='')
+form.criminalsForm(method='post', action='', enctype='multipart/form-data')
 	table
 		!=partial('criminal/form', { locals: { criminal: criminal } })
 		tr.submit

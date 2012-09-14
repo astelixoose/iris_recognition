@@ -67,11 +67,49 @@ function defineModels(mongoose, fn) {
 	Criminal = new Schema({
 		'firstname': {
 			type: String, 
-			validate: [validatePresenceOf, 'To pole jest wymagane']
+			validate: [validatePresenceOf, 'To pole jest wymagane'],
+			trim: true
 		},
 		'lastname': {
 			type: String, 
-			validate: [validatePresenceOf, 'To pole jest wymagane']
+			validate: [validatePresenceOf, 'To pole jest wymagane'],
+			trim: true
+		},
+		'date_of_birth': {
+			type: String
+		},
+		'height': {
+			type: Number
+		},
+		'eye_color': {
+			type: String,
+			trim: true
+		},
+		'last_address': { 
+			type: Number,
+			min: 18,
+			max: 65,
+			trim: true
+		},
+		'characteristics': {
+			type: String,
+			trim: true
+		},
+		'parents_name': {
+			type: String,
+			trim: true
+		},
+		'prison_sentence': {
+			type: String,
+			trim: true
+		},
+		'content_penalty': {
+			type: String,
+			trim: true
+		},
+		'others': {
+			type: String,
+			trim: true
 		}
 	});
 
@@ -81,6 +119,8 @@ function defineModels(mongoose, fn) {
 	});
 
 	mongoose.model('Criminal', Criminal, 'criminal');
+
+
 
 	fn();
 }

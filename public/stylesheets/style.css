@@ -135,3 +135,6 @@ input[type=submit] {
 	float: left;
 	margin: 0 30px 10px 10px;
 }
+.criminalDetails .image img{
+	width: 160px;
+}
