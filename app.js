@@ -48,12 +48,14 @@ app.configure('development', function(){
         "name":"",
         "db":"test"
     }
+	app.set('app-host', 'localhost');
+	app.set('app-port', '3000');
 	app.set('db-uri', generate_mongo_url(mongoSettings));
 	
 	app.locals({
 		title: 'System iris',
-		dir_host: 'http://localhost:3000',
-		dir_public_images: 'http://localhost:3000/images'
+		dir_host: 'http://'+ app.set('app-host') +':'+ app.set('app-port'),
+		dir_public_images: 'http://'+ app.set('app-host') +':'+ app.set('app-port') +'/images'
 	});
 	app.use(express.errorHandler({
 		dumpExceptions: true, 
@@ -64,12 +66,15 @@ app.configure('development', function(){
 app.configure('production', function(){
     var env = JSON.parse(process.env.VCAP_SERVICES);
     mongoSettings = env['mongodb-1.8'][0]['credentials'];
+	app.set('app-host', process.env.VCAP_APP_HOST || 'localhost');
+	app.set('app-port', process.env.VCAP_APP_PORT || '3000');
+	
 	app.set('db-uri', generate_mongo_url(mongoSettings));
 	
 	app.locals({
 		title: 'System iris',
-		dir_host: 'http://localhost:3000',
-		dir_public_images: __dirname + '/public/images'
+		dir_host: 'http://'+ app.set('app-host') +':'+ app.set('app-port'),
+		dir_public_images: 'http://'+ app.set('app-host') +':'+ app.set('app-port') +'/images'
 	});
 	app.use(express.errorHandler());
 });
