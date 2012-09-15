@@ -18,6 +18,7 @@ var express = require('express'),
     models = require('./models'),
 	fileUpload = require('fileupload'),
 	fs = require('fs'),
+	mongoSettings,
 	fileuploadMiddleware,
     db,
     gfRepository,
@@ -26,8 +27,29 @@ var express = require('express'),
     Criminal,
 	Files;
 
+var generate_mongo_url = function(obj){
+    obj.hostname = (obj.hostname || 'localhost');
+    obj.port = (obj.port || 27017);
+    obj.db = (obj.db || 'test');
+
+    if(obj.username && obj.password){
+        return "mongodb://" + obj.username + ":" + obj.password + "@" + obj.hostname + ":" + obj.port + "/" + obj.db;
+    }else{
+        return "mongodb://" + obj.hostname + ":" + obj.port + "/" + obj.db;
+    }
+}
+
 app.configure('development', function(){
-	app.set('db-uri', 'mongodb://localhost/test');
+	mongoSettings = {
+        "hostname":"localhost",
+        "port":27017,
+        "username":"",
+        "password":"",
+        "name":"",
+        "db":"test"
+    }
+	app.set('db-uri', generate_mongo_url(mongoSettings));
+	
 	app.locals({
 		title: 'System iris',
 		dir_host: 'http://localhost:3000',
@@ -40,7 +62,10 @@ app.configure('development', function(){
 });
 
 app.configure('production', function(){
-	app.set('db-uri', 'mongodb://localhost/test');
+    var env = JSON.parse(process.env.VCAP_SERVICES);
+    mongoSettings = env['mongodb-1.8'][0]['credentials'];
+	app.set('db-uri', generate_mongo_url(mongoSettings));
+	
 	app.locals({
 		title: 'System iris',
 		dir_host: 'http://localhost:3000',
@@ -529,7 +554,7 @@ app.post('/addUser', function(req, res) {
   });
 });
 
-app.listen(process.env['app_port'] || 3000, function(){
+app.listen(process.env.VCAP_APP_PORT || 3000, function(){
 	console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
 	console.log("Version node is "+ process.version);
 });
