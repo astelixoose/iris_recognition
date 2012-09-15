@@ -138,3 +138,6 @@ input[type=submit] {
 .criminalDetails .image img{
 	width: 160px;
 }
+.criminalDetails .imageIris{
+	width: 40px;
+}

@@ -20,9 +20,11 @@ var express = require('express'),
 	fs = require('fs'),
 	fileuploadMiddleware,
     db,
+    gfRepository,
 	fileRepo,
     User,
-    Criminal;
+    Criminal,
+	Files;
 
 app.configure('development', function(){
 	app.set('db-uri', 'mongodb://localhost/test');
@@ -52,6 +54,7 @@ models.defineModels(mongoose, function() {
 	app.User = User = mongoose.model('User');
 	app.Criminal = Criminal = mongoose.model('Criminal');
 	db = mongoose.connect(app.set('db-uri'));
+	Files = mongoose.model('files', new mongoose.Schema({}), 'fs.files');
 	
 	fileRepo = new GridFS('test');
 });
@@ -90,6 +93,128 @@ app.configure(function(){
 //		adapter: fileuploadGridfs({ database: 'test' })
 //	}).middleware;
 });
+
+
+// Helpers
+
+/**
+ * GridFileRepository
+ * 
+ * Magazyn plikow oparty na GridFS w bazie mongodb
+ */
+function GridFileRepository() {
+	
+	/**
+	 * Dodaje plik
+	 * 
+	 * @param {Object} img Plik znajdujacy sie na dysku
+	 * @param {ObjectID} ownerId id wlasciciela pliku
+	 * @param {String} typeData typ przechowywanych danych
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.addFile = function(img, ownerId, typeData, callback) {
+		var preCallback = function(err) {
+			// usun plik z dysku
+			fs.unlink(img.path, function (err) {
+				if (err) return callback(err);
+				callback();
+			});
+		}
+		
+		if (img.size <= 0) return preCallback(new Error('File is empty'));
+		fs.readFile(img.path, function(err, data){ // odczytaj plik z dysku
+			if (err) return preCallback(err);
+			var imageBuffer = new Buffer(data, 'binary'); // stworz buffer z tego pliku
+			// wgraj plik do magazynu
+			fileRepo.put(imageBuffer, undefined, 'w', { 'content_type' : img.type, 'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err){
+				if (err) return preCallback(err);
+				preCallback();
+			});
+		});
+	}
+	
+	/**
+	 * Aktualizuje plik
+	 * 
+	 * @param {Object} img Plik znajdujacy sie na dysku
+	 * @param {ObjectID} ownerId id wlasciciela pliku
+	 * @param {String} typeData typ przechowywanych danych
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.updateOrCreateFile = function(img, ownerId, typeData, callback) {
+		console.log(util.inspect(img, false, null));
+		var preCallback = function(err) {
+			// usun plik z dysku
+			fs.unlink(img.path, function (err) {
+				if (err) return callback(err);
+				callback();
+			});
+		}
+		
+		if (img.size <= 0) return preCallback(new Error('File is empty'));
+		fs.readFile(img.path, function(err, fileOnDisc){ // odczytaj plik z dysku
+			if (err) return preCallback(err);
+			console.log(util.inspect({'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, false, null));
+			Files.find({'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err, dataInFS) { //pobiera dane dla pliku z gridfs
+				var oldId = (!err && dataInFS[0]) ? dataInFS[0]._id : null; // zapamietaj id starego pliku jesli taki byl
+				
+				// dodaj plik do bazy
+				var imageBuffer = new Buffer(fileOnDisc, 'binary');
+				fileRepo.put(imageBuffer, undefined, 'w', { 'content_type' : img.type, 'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err){
+					if (err) return preCallback(err); // jesli nie powiodlo sie dodanie pliku zostaw stary
+					if (oldId) { // jesli byl wczesniejszy plik
+						// usun stary plik z bazy
+						var gs = new GridStore(db.connection.db, oldId, null,'w');
+						gs.unlink(function(err) {
+							if (err) return preCallback(err);
+							preCallback();
+						});
+					}
+					else {
+						preCallback();
+					}
+				});
+
+			});
+		});
+	}
+	
+	/**
+	 * Zwraca obiekt Stream danego pliku
+	 * 
+	 * @param {ObjectID} ownerId id wlasciciela pliku
+	 * @param {String} typeData typ przechowywanych danych
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.streamFile = function(ownerId, typeData, callback) {
+		Files.find({'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err, data) {
+			if (err) return callback(err);
+			if (!data[0]) return callback(new Error('File is not found'));
+			
+			var gs = new GridStore(db.connection.db, data[0]._id, null,'r');
+			gs.open(function(err, store) {
+				if (err) return callback(err);
+				callback(null, store.stream(true));
+			});
+		});
+	}
+	
+	/**
+	 * Zwraca obiekt Stream danego pliku
+	 * 
+	 * @param {ObjectID} ownerId id wlasciciela pliku
+	 * @param {String} typeData typ przechowywanych danych
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.existFile = function(ownerId, typeData, callback) {
+		Files.find({'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err, data) {
+			if (err) return callback(err);
+			if (!data[0]) return callback(new Error('File is not found'));
+			callback(null, true);
+		});
+	}
+}
+gfRepository = new GridFileRepository();
 
 
 // Routes
@@ -181,45 +306,21 @@ app.post('/criminals/add', loadUser, function(req, res) {
 			}
 		});
 	}
+	
 	var successFunction = function() {
 		res.redirect('/criminals');
 	}
 	
-	var uploadFile= function(img, ownerId, typeData, callback) {
-		fs.readFile(img.path, function(err, data){
-			if (err) {
-				callback(err);
-			}
-			else {
-				var imageBuffer = new Buffer(data, 'binary');
-				fileRepo.put(imageBuffer, undefined, 'w', { 'content_type' : img.type, 'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err){
-					callback();
-				});
-			}
-		});
-	}
-	
 	criminal.save(function(err) {
-		if (err) {
-			errorFunction(err, criminal);
-		}
-		else {
-			if (req.files) {
-				if (req.files.img_general && req.files.img_iris) {
-					uploadFile(req.files.img_general, criminal._id, 'general',function(err) {
-						uploadFile(req.files.img_iris, criminal._id, 'iris', function(err) {
-							successFunction();
-						});
-					});
-				}
-				else {
-					successFunction();
-				}
-			}
-			else {
+		if (err) return errorFunction(err, criminal);
+		if (!req.files) return successFunction();
+		if (!req.files.img_general || !req.files.img_iris) return successFunction();
+		
+		gfRepository.addFile(req.files.img_general, criminal._id, 'general',function(err) {
+			gfRepository.addFile(req.files.img_iris, criminal._id, 'iris', function(err) {
 				successFunction();
-			}
-		}
+			});
+		});
 	});
 });
 
@@ -255,41 +356,18 @@ app.post('/criminals/edit/:id', loadUser, function(req, res) {
 		res.redirect('/criminals');
 	}
 	
-	var uploadFile= function(img, ownerId, typeData, callback) {
-		fs.readFile(img.path, function(err, data){
-			if (err) {
-				callback(err);
-			}
-			else {
-				var imageBuffer = new Buffer(data, 'binary');
-				fileRepo.put(imageBuffer, undefined, 'w', { 'content_type' : img.type, 'metadata' : { 'owner_id' : ownerId, 'type_data' : typeData }}, function(err){
-					callback();
-				});
-			}
-		});
-	}
-	
 	Criminal.findByIdAndUpdate(req.params.id, req.body.criminal, function(err, criminal) {
-		if (err) {
-			errorFunction(err, criminal);
-		}
-		else {
-			if (req.files) {
-				if (req.files.img_general && req.files.img_iris) {
-//					uploadFile(req.files.img_general, criminal._id, 'general',function(err) {
-//						uploadFile(req.files.img_iris, criminal._id, 'iris', function(err) {
-							successFunction();
-//						});
-//					});
-				}
-				else {
-					successFunction();
-				}
-			}
-			else {
+		if (err) return errorFunction(err, criminal);
+		if (!req.files) return successFunction();
+		console.log(util.inspect(req.files, false, null));
+		if (!req.files.img_general || !req.files.img_iris) return successFunction();
+		
+		gfRepository.updateOrCreateFile(req.files.img_general, criminal._id, 'general',function(err) {
+			gfRepository.updateOrCreateFile(req.files.img_iris, criminal._id, 'iris', function(err) {
+				if (err) console.log(util.inspect(err, false, null));
 				successFunction();
-			}
-		}
+			});
+		});
 	});
 });
 
@@ -299,11 +377,14 @@ app.get('/criminals/details/:id', loadUser, function(req, res) {
 			res.redirect('/criminals');
 		}
 		else {
-			res.render('criminal/details.jade', {
-				locals: {
-					user: req.currentUser,
-					criminal: criminal
-				}
+			gfRepository.existFile(criminal._id, 'iris', function(err, exist) {
+				res.render('criminal/details.jade', {
+					locals: {
+						user: req.currentUser,
+						criminal: criminal,
+						exist_iris: exist ? true : false
+					}
+				});
 			});
 		}
 	});
@@ -313,6 +394,9 @@ app.get('/criminals/details/:id', loadUser, function(req, res) {
  * Statyczne pliki kryminalisy
  */
 app.get('/static/criminal/:id', loadUser, function(req, res) {
+	console.log(util.inspect(req.query, false, null));
+	
+	var typeData = req.query.type ? req.query.type : 'general';
 	
 	var notFound = function(err) {
 		if (err) console.log(util.inspect(err, false, null));
@@ -321,40 +405,13 @@ app.get('/static/criminal/:id', loadUser, function(req, res) {
 	}
 	
 	Criminal.findOne({_id: req.params.id}, function(err, criminal) {
-		if (err) {
-			notFound(err);
-		}
-		else {
-			var Files = mongoose.model('files', new mongoose.Schema({}), 'fs.files');
-			Files.find({'metadata.owner_id' : criminal._id}, function(err, data) {
-				if (err) {
-					notFound(err);
-				}
-				else {
-					if (!data[0]) {
-						notFound();
-					}
-					else {
-						console.log(util.inspect(data[0]._id, false, null));
-						var gs = new GridStore(db.connection.db, data[0]._id, null,'r');
-						gs.open(function(err, store) {
-							if (err) {
-								notFound(err);
-							}
-							else {
-								console.log(util.inspect('otworzono store', false, null));
-								console.log(util.inspect(store.metadata, false, null));
-								console.log(util.inspect(store.contentType, false, null));
-								console.log(util.inspect(store.length - store.position, false, null));
-
-								res.header('Content-Type', store.contentType);
-								store.stream(true).pipe(res);
-							}
-						});
-					}
-				}
-			})
-		}
+		if (err) return notFound(err);
+		
+		gfRepository.streamFile(criminal._id, typeData, function(err, stream){
+			if (err) return notFound(err);
+			res.header('Content-Type', stream.gstore.contentType);
+			stream.pipe(res);
+		});
 	});
 });
 

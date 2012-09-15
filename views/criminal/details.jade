@@ -1,6 +1,6 @@
 div.criminalDetails
 	.image
-		img(src=dir_host +'/static/criminal/'+ criminal._id, alt='Zdjecie osoby')
+		img(src=dir_host +'/static/criminal/'+ criminal._id +'/?type=general', alt='Zdjecie osoby')
 		br
 		br
 		a(href=dir_host + '/criminals/edit/'+ criminal._id) Zmień dane
@@ -14,6 +14,13 @@ div.criminalDetails
 		tr
 			td Data urodzenia
 			td #{criminal.date_of_birth}
+		tr
+			td Zdjęcie tęczówki oka
+			if exist_iris
+				td 
+					img.imageIris(src=dir_host +'/static/criminal/'+ criminal._id +'/?type=iris', alt='Zdjecie tęczówki oka')
+			else 
+				td Brak
 		tr
 			td Wzrost
 			td #{criminal.height}
