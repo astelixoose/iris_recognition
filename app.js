@@ -54,7 +54,7 @@ app.configure('development', function(){
 	
 	app.locals({
 		title: 'System iris',
-		dir_host: 'http://'+ app.set('app-host') +':'+ app.set('app-port'),
+		dir_host: 'http://'+ app.set('app-host')+ ':'+ app.set('app-port'),
 		dir_public_images: 'http://'+ app.set('app-host') +':'+ app.set('app-port') +'/images'
 	});
 	app.use(express.errorHandler({
@@ -66,15 +66,16 @@ app.configure('development', function(){
 app.configure('production', function(){
     var env = JSON.parse(process.env.VCAP_SERVICES);
     mongoSettings = env['mongodb-1.8'][0]['credentials'];
-	app.set('app-host', process.env.VCAP_APP_HOST || 'localhost');
+	app.set('app-host', 'iris.aws.af.cm');
 	app.set('app-port', process.env.VCAP_APP_PORT || '3000');
+	console.log(util.inspect(process.env, false, null));
 	
 	app.set('db-uri', generate_mongo_url(mongoSettings));
 	
 	app.locals({
 		title: 'System iris',
-		dir_host: 'http://'+ app.set('app-host') +':'+ app.set('app-port'),
-		dir_public_images: 'http://'+ app.set('app-host') +':'+ app.set('app-port') +'/images'
+		dir_host: 'http://'+ app.set('app-host'),
+		dir_public_images: 'http://'+ app.set('app-host') +'/images'
 	});
 	app.use(express.errorHandler());
 });
@@ -98,30 +99,20 @@ app.configure(function(){
 	app.use(express.bodyParser({ keepExtensions: true, uploadDir: __dirname +'/tmp' }));
 	app.use(express.cookieParser());
 	app.use(connectTimeout({ time: 10000 }));
-
-
 	app.use(express.session( {
 			cookie: {maxAge: 1200000}, 
 			store:  new mongoStore({url: app.set('db-uri'), interval: 1200000}), 
 			secret: "idefix" 
 		}));
-
-
-//	app.use(express.session({store: new mongoStore({db : db}), secret: 'topsecret'}));
 //	app.use(express.logger({ format: '\x1b[1m:method\x1b[0m \x1b[33m:url\x1b[0m :response-time ms' }))
 
-
-
-	app.use(express.methodOverride());
+app.use(express.methodOverride());
 	app.use(stylus.middleware({ src: __dirname + '/public' }));
 	app.use(app.router);
 	app.use(express.static(__dirname + '/public'));
 	
 	fileuploadPublicMiddleware = fileUpload.createFileUpload(__dirname +'/public/tmp').middleware;
 	fileuploadBackendMiddleware = fileUpload.createFileUpload(__dirname +'/tmp').middleware;
-//	var fileuploadMiddleware = fileUpload.createFileUpload({
-//		adapter: fileuploadGridfs({ database: 'test' })
-//	}).middleware;
 });
 
 
@@ -521,9 +512,11 @@ app.get('/logout', loadUser, function(req, res) {
 	res.redirect('/login');
 });
 
+
 // dodawanie usera
-app.get('/addUser', function(req, res) {
+app.get('/adduser', function(req, res) {
 	res.render('user/login.jade', {
+		layout: 'simple',
 		locals: {
 			title: 'Logowanie do systemu IRIS',
 			user: new User()
@@ -531,31 +524,18 @@ app.get('/addUser', function(req, res) {
 	});
 });
 
-app.post('/addUser', function(req, res) {
+
+app.post('/adduser', function(req, res) {
   var user = new User(req.body.user);
 
   function userSaveFailed(err) {
-	  res.send(err);
-//    req.flash('error', 'Account creation failed');
-//    res.render('users/new.jade', {
-//      locals: { user: user }
-//    });
+	  if (err) console.log(util.inspect(err, false, null));
+	  res.redirect('/adduser');
   }
 
   user.save(function(err) {
     if (err) return userSaveFailed(err);
-
-//    req.flash('info', 'Your account has been created');
-
-//    switch (req.params.format) {
-//      case 'json':
-        res.send(user.toObject());
-//      break;
-//
-//      default:
-//        req.session.user_id = user.id;
-//        res.redirect('/documents');
-//    }
+	res.send(user.toObject());
   });
 });
 

@@ -1,6 +1,7 @@
 div.criminalDetails
 	.image
-		img(src=dir_host +'/static/criminal/'+ criminal._id +'/?type=general', alt='Zdjecie osoby')
+		a(href=dir_host +'/static/criminal/'+ criminal._id +'/?type=general', target='_blank')
+			img(src=dir_host +'/static/criminal/'+ criminal._id +'/?type=general', alt='Zdjecie osoby')
 		br
 		br
 		a(href=dir_host + '/criminals/edit/'+ criminal._id) Zmień dane
@@ -18,7 +19,8 @@ div.criminalDetails
 			td Zdjęcie tęczówki oka
 			if exist_iris
 				td 
-					img.imageIris(src=dir_host +'/static/criminal/'+ criminal._id +'/?type=iris', alt='Zdjecie tęczówki oka')
+					a(href=dir_host +'/static/criminal/'+ criminal._id +'/?type=iris', target='_blank')
+						img.imageIris(src=dir_host +'/static/criminal/'+ criminal._id +'/?type=iris', alt='Zdjecie tęczówki oka')
 			else 
 				td Brak
 		tr

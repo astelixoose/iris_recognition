@@ -86,7 +86,7 @@ function defineModels(mongoose, fn) {
 			trim: true
 		},
 		'last_address': { 
-			type: Number,
+			type: String,
 			min: 18,
 			max: 65,
 			trim: true
