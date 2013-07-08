@@ -17,7 +17,9 @@ var express = require('express'),
     path = require('path'),
     models = require('./models'),
 	fileUpload = require('fileupload'),
+//	irisRec = require('./irisrec'),
 	fs = require('fs'),
+	gm = require('gm'),
 	mongoSettings,
 	fileuploadMiddleware,
     db,
@@ -264,27 +266,70 @@ app.get('/', loadUser, function(req, res) {
 	});
 });
 
-app.get('/identify', loadUser, function(req, res) {
-	res.render('identify/index.jade', {
-		locals: {
-			user: req.currentUser
-		}
-	});
+//app.get('/identify', loadUser, function(req, res) {
+app.get('/identify', function(req, res) {
+	
+	var dir = __dirname + '/tmp';
+	var irisName = 'iris.jpg';
+//	irisRec.identify(irisName, dir);
+	
+	console.log(util.inspect('irisRecognition', false, null));
+	
+	gm(dir + '/iris.jpg')
+	.gaussian(5, 1.4)
+//	.edge(2)
+//	.monochrome(2)
+//	  .blur(10)
+//	  .edge(1)
+//	  .write(dir + '/iris_edge.jpg', function(err){
+//		if (err) return console.dir(arguments)
+//		console.log(this.outname + ' created :: ' + arguments[3])
+//	  }
+//	) 
+    .stream(function (err, stdout, stderr) {
+	if (err) return console.dir(arguments)
+      stdout.pipe(res);
+    });
+		
+	
+//	gm(dir + irisName)
+//	.resize('200', '200')
+//	.write(dir + irisName, function (err) {
+//		if (err) console.log(util.inspect(err, false, null));
+//	});
+//	
+	
+	
+//	res.send('Identyfikacja');
+	
+//	res.render('identify/index.jade', {
+//		locals: {
+//			user: req.currentUser
+//		}
+//	});
 });
 
 app.post('/identify', loadUser, fileuploadPublicMiddleware, function(req, res) {
-//app.post('/identify', loadUser, function(req, res) {
 	console.log(util.inspect(req.files, false, null));
 	console.log(util.inspect(req.body, false, null));
 	if (req.body.image && req.body.image[0]) {
 		var image = req.body.image[0];
 		image.publicPath = '/tmp/' + image.path + image.basename;
-		res.render('identify/details.jade', {
-			locals: {
-				user: req.currentUser,
-				image: image
-			}
-		});
+		var imageBackendPath = __dirname + '/public' + image.publicPath;
+		
+		
+		
+		console.log(util.inspect(imageBackendPath, false, null));
+		
+		
+		
+		
+//		res.render('identify/details.jade', {
+//			locals: {
+//				user: req.currentUser,
+//				image: image
+//			}
+//		});
 	}
 	else {
 		res.render('identify/index.jade', {
