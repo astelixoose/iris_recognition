@@ -17,6 +17,7 @@ var express = require('express'),
     path = require('path'),
     models = require('./models'),
 	fileUpload = require('fileupload'),
+	//cv = require('opencv'),
 //	irisRec = require('./irisrec'),
 	fs = require('fs'),
 	gm = require('gm'),
@@ -275,7 +276,7 @@ app.get('/identify', function(req, res) {
 	
 	console.log(util.inspect('irisRecognition', false, null));
 	
-	gm(dir + '/iris.jpg')
+	gm(dir +'/'+ irisName)
 	.gaussian(5, 1.4)
 //	.edge(2)
 //	.monochrome(2)

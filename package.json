@@ -11,5 +11,7 @@
     , "session-mongoose": "0.0.2"
     , "GridFS": "0.2.0"
     , "fileupload": "0.2.2"
+    , "gm": "1.5.0"
+    , "opencv": "0.3.1"
   }
 }
