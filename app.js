@@ -17,7 +17,7 @@ var express = require('express'),
     path = require('path'),
     models = require('./models'),
 	fileUpload = require('fileupload'),
-	//cv = require('opencv'),
+	cv = require('opencv'),
 //	irisRec = require('./irisrec'),
 	fs = require('fs'),
 	gm = require('gm'),
@@ -25,6 +25,7 @@ var express = require('express'),
 	fileuploadMiddleware,
     db,
     gfRepository,
+	identifyIris,
 	fileRepo,
     User,
     Criminal,
@@ -240,6 +241,196 @@ function GridFileRepository() {
 }
 gfRepository = new GridFileRepository();
 
+/**
+ * IdentifyIris
+ * 
+ * Biblioteka identyfikująca tożsamość na podstawie tęczówki oka
+ */
+function IdentifyIris() {
+	
+	/**
+	 * Lokalizuje źrenice
+	 * 
+	 * @param {Object} img Obrazek w postaci matrixa
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.findPupil = function(imgMatrix, callback) {
+		var preCallback = function(err, pupil) {
+			if (err) return callback(err);
+			callback(err, pupil);
+		}
+		var dir = __dirname + '/tmpData';
+		
+		console.log(util.inspect('image processing start', false, null));
+		var im_copy = imgMatrix.copy();
+		im_copy.convertGrayscale();
+
+		im_copy.gaussianBlur([9, 9], 0, 0);
+		im_copy.canny(5, 70);
+		im_copy.gaussianBlur([7, 7], 0, 0);
+
+		//im_copy.canny(32, 16);
+		//im.canny(100, 100);
+
+		//im_copy.save(dir +'/'+ 'test.jpg');
+		//return preCallback(1);
+
+
+		//console.log(util.inspect(im.height()/8, false, null));
+		//console.log(util.inspect(im.houghCircles(1, 1, 30, 100, 10, 500), false, null));
+		var pupils = [];
+		var breakLoop = false;
+		var minRad = 0;
+		var maxRad = im_copy.height()/8;
+//		var maxRad = im_copy.height()/8;
+		
+		
+		for (var dp = 2; dp < 4; dp++) {
+			for (var high = 32; high < 300;) {
+				console.log(util.inspect(im_copy.height(), false, null));
+				console.log(util.inspect(minRad, false, null));
+				console.log(util.inspect(maxRad, false, null));
+
+				for (var low = 60; low < 300;) {
+					try {
+						var circles = im_copy.houghCircles(dp, 10, high, low, minRad, maxRad);
+						if (circles && circles.length) {
+							console.log(util.inspect(high+ 'x' + low + ' goooooooooooooooooooooooooooooooood!!!!!!', false, null));
+							console.log(util.inspect(circles, false, null));
+
+							pupils = circles;
+							breakLoop = true;
+							break;
+						}
+						else {
+							console.log(util.inspect(high+ 'x' + low + ' bad', false, null));
+						}
+					} catch (err) {
+
+					}
+
+					low += 15;
+				}
+				if (breakLoop) {
+					break;
+				}
+
+				high += 5;
+			}
+			if (breakLoop) {
+				break;
+			}
+		}
+		
+		return preCallback(null, pupils);
+	}
+	
+	/**
+	 * Lokalizuje tęczówkę
+	 * 
+	 * @param {Object} img Obrazek w postaci matrixa
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.findIris = function(imgMatrix, callback) {
+		var preCallback = function(err, iris) {
+			if (err) return callback(err);
+			callback(err, iris);
+		}
+		var dir = __dirname + '/tmpData';
+		
+		console.log(util.inspect('findIris start', false, null));
+		var im_copy = imgMatrix.copy();
+
+		im_copy.convertGrayscale();
+		im_copy.gaussianBlur([9, 9], 0, 0);
+		im_copy.canny(50, 200);
+		im_copy.gaussianBlur([7, 7], 0, 0);
+
+		//im_copy.canny(32, 16);
+		//im.canny(100, 100);
+
+//		im_copy.save(dir +'/'+ 'test.jpg');
+//		return preCallback(1);
+
+
+		var irises = [];
+		var breakLoop = false;
+		var minRad = im_copy.width()/10;
+		var maxRad = im_copy.width()/3;
+		var dp = 2;
+//		var maxRad = im_copy.width()/8;
+		
+		for (var high = 32; high < 300; ) {
+			console.log(util.inspect(im_copy.width(), false, null));
+			console.log(util.inspect(minRad, false, null));
+			console.log(util.inspect(maxRad, false, null));
+
+			for (var low = 100; low < 500; ) {
+				try {
+					var circles = im_copy.houghCircles(dp, im_copy.width()/5, high, low, minRad, maxRad);
+					if (circles && circles.length) {
+						console.log(util.inspect(high+ 'x' + low + ' good findIris!!!!!!', false, null));
+						console.log(util.inspect(circles, false, null));
+
+						irises = circles;
+						breakLoop = true;
+						break;
+					}
+					else {
+						console.log(util.inspect(high+ 'x' + low + ' bad', false, null));
+					}
+				} catch (err) {
+					console.log(util.inspect(high+ 'x' + low + ' bad err', false, null));
+				}
+
+				low += 10;
+			}
+			if (breakLoop) {
+				break;
+			}
+
+			high += 5;
+		}
+		
+		return preCallback(null, irises);
+	}
+	
+	/**
+	 * Identyfikuj tożsamość
+	 * 
+	 * @param {Object} img Plik znajdujacy sie na dysku
+	 * @param {fn} callback funkcja wywolywana po zakonczeniu operacji
+	 */
+	this.identify = function(imgPath, callback) {
+		var preCallback = function(err, result) {
+			if (err) return callback(err);
+			callback(err, result);
+		}
+		
+		var dir = __dirname + '/tmpData';
+		
+		cv.readImage(imgPath, function(err, im) {
+			if (err) return preCallback(err);
+			
+            console.log(util.inspect('image processing start', false, null));
+			im_copy = im.copy();
+            
+			identifyIris.findIris(im_copy, function (err, irises) {
+				console.log(util.inspect('identify result', false, null));
+				console.log(util.inspect(irises, false, null));
+				if (err) return preCallback(err);
+				
+				for (var i=0;i<irises.length; i++){
+					var circle = irises[i];
+					im_copy.ellipse(circle[0], circle[1], circle[2], circle[2], [255, 0, 0]);
+				}
+				im_copy.save(dir +'/'+ 'test.jpg');
+				preCallback(null);
+			});
+        });
+	}
+}
+identifyIris = new IdentifyIris();
 
 // Routes
 function loadUser(req, res, next) {
@@ -270,14 +461,19 @@ app.get('/', loadUser, function(req, res) {
 //app.get('/identify', loadUser, function(req, res) {
 app.get('/identify', function(req, res) {
 	
-	var dir = __dirname + '/tmp';
+	var dir = __dirname + '/tmpData';
 	var irisName = 'iris.jpg';
+//	var irisName = 'img2.jpg';
 //	irisRec.identify(irisName, dir);
 	
 	console.log(util.inspect('irisRecognition', false, null));
-	
-	gm(dir +'/'+ irisName)
-	.gaussian(5, 1.4)
+	identifyIris.identify(dir +'/'+ irisName, function (err, result) {
+		console.log(util.inspect('identify result', false, null));
+		fs.createReadStream(dir +'/'+ 'test.jpg').pipe(res);
+	});
+
+//	gm(dir +'/'+ irisName)
+//	.gaussian(5, 1.4)
 //	.edge(2)
 //	.monochrome(2)
 //	  .blur(10)
@@ -287,10 +483,10 @@ app.get('/identify', function(req, res) {
 //		console.log(this.outname + ' created :: ' + arguments[3])
 //	  }
 //	) 
-    .stream(function (err, stdout, stderr) {
-	if (err) return console.dir(arguments)
-      stdout.pipe(res);
-    });
+//    .stream(function (err, stdout, stderr) {
+//	if (err) return console.dir(arguments)
+//      stdout.pipe(res);
+//    });
 		
 	
 //	gm(dir + irisName)
